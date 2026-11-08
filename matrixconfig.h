@@ -5,7 +5,9 @@
 #define WIDTH      64
 #define HEIGHT     64
 #define BIT_DEPTH  4
+#ifndef BRIGHTNESS
 #define BRIGHTNESS 255
+#endif
 
 // Hardware pins mapping for Pimoroni Interstate 75 W (RP2350)
 uint8_t rgbPins[]  = {0, 1, 2, 3, 4, 5};
@@ -50,9 +52,6 @@ const uint8_t MATRIX_TILE_V     = 1;  // number of matrices arranged vertically
 const uint16_t mw = MATRIX_TILE_WIDTH *  MATRIX_TILE_H;
 const uint16_t mh = MATRIX_TILE_HEIGHT * MATRIX_TILE_V;
 
-// Used by some demos
-const uint32_t NUMMATRIX = mw*mh;
-const uint32_t NUM_LEDS = NUMMATRIX;
 
 #ifdef LEDMATRIX
 // cLEDMatrix creation, don't allocate memory since we will feed it the framebuffer
@@ -67,6 +66,29 @@ CRGB *matrixleds = nullptr;
 // get via malloc in setup (or even ps_malloc to use PSRAM as needed).
 // So we'll call Framebuffer_GFX->newLedsPtr and setvirtdisp to set those pointers correctly
 FastLED_Protomatter_RGBPanel_FrameBuffer_GFX *matrix = nullptr;
+
+// Used by some demos
+const uint32_t NUMMATRIX = mw*mh;
+const uint32_t NUM_LEDS = NUMMATRIX;
+const uint16_t MATRIX_WIDTH = mw;
+const uint16_t MATRIX_HEIGHT = mh;
+// min/max are complicated. Arduino and ESP32 layers try to be helpful by using
+// templates that take specific kinds of arguments, but those do not always work
+// with mixed types:
+// error: no matching function for call to 'max(byte&, int16_t&)'
+// These defines get around this problem.
+#define mmin(a,b) ((a<b)?(a):(b))
+#define mmax(a,b) ((a>b)?(a):(b))
+
+// FastLED::colorutils needs a signature with uint8_t
+uint16_t XY( uint8_t x, uint8_t y) {
+    return matrix->XY(x,y);
+}
+// but x/y can be bigger than 256
+uint16_t XY16( uint16_t x, uint16_t y) {
+    return matrix->XY(x,y);
+}
+
 
 // ----------------------------------------------------------------------------
 

@@ -2,7 +2,7 @@
 // License: Apache v2.0
 //
 
-#include "matrix_config.h"
+#include "matrixconfig.h"
 #include "fonts.h"
 
 uint8_t matrix_brightness = 32;

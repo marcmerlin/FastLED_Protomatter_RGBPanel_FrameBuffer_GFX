@@ -12,11 +12,13 @@
     #ifndef WIFI_HOSTNAME 
         #define WIFI_HOSTNAME "TME69-changeme"
     #endif
+    #error "no WIFI"
     #define WIFI_BEACON_ID "TME69"
     #include "wifi_serial_ota.h"
 #endif
 
-#include "neomatrix_config.h"
+//#include "neomatrix_config.h"
+#include "matrixconfig.h"
 #define zeds ledmatrix
 
 #include "Table_Mark_Estes_config.h"
