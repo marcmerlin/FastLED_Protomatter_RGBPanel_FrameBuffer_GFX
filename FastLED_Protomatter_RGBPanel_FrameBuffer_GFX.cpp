@@ -20,22 +20,30 @@ void FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::show() {
     if (!_leds || !_matrix) return;
     
     uint8_t b_scale = FastLED.getBrightness();
-    bool scale = (b_scale != 255);
-
     int16_t w = width();
     int16_t h = height();
 
-    for (int16_t y = 0; y < h; y++) {
-        for (int16_t x = 0; x < w; x++) {
-            CRGB pixel = _leds[XY(x, y)];
-            
-            if (scale) {
-                pixel.r = scale8(pixel.r, b_scale);
-                pixel.g = scale8(pixel.g, b_scale);
-                pixel.b = scale8(pixel.b, b_scale);
+    if (b_scale == 255) {
+        // Maximum speed: No brightness math
+        for (int16_t y = 0; y < h; y++) {
+            for (int16_t x = 0; x < w; x++) {
+                const CRGB &pixel = _leds[XY(x, y)];
+                // Fast 565 conversion 
+                uint16_t c = ((pixel.r & 0xF8) << 8) | ((pixel.g & 0xFC) << 3) | (pixel.b >> 3);
+                _matrix->drawPixel(x, y, c);
             }
-            
-            _matrix->drawPixel(x, y, _matrix->color565(pixel.r, pixel.g, pixel.b));
+        }
+    } else {
+        // Fast scaling: Uses scale8 (1-cycle ARM multiply)
+        for (int16_t y = 0; y < h; y++) {
+            for (int16_t x = 0; x < w; x++) {
+                const CRGB &pixel = _leds[XY(x, y)];
+                uint8_t r = scale8(pixel.r, b_scale);
+                uint8_t g = scale8(pixel.g, b_scale);
+                uint8_t b = scale8(pixel.b, b_scale);
+                uint16_t c = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+                _matrix->drawPixel(x, y, c);
+            }
         }
     }
     
