@@ -10,15 +10,14 @@
 #include "FastLED_Protomatter_RGBPanel_FrameBuffer_GFX.h"
 
 FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::FastLED_Protomatter_RGBPanel_FrameBuffer_GFX(
-    Adafruit_Protomatter *matrix, CRGB *leds, uint16_t w, uint16_t h
-) : Framebuffer_GFX(leds, w, h, NULL) {
+    Adafruit_Protomatter *matrix, CRGB *leds, uint16_t w, uint16_t h) : Framebuffer_GFX(leds, w, h, NULL) {
     _matrix = matrix;
     _leds = leds; 
 }
 
 void FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::show() {
     if (!_leds || !_matrix) return;
-    
+
     uint8_t b_scale = FastLED.getBrightness();
     int16_t w = width();
     int16_t h = height();
@@ -46,7 +45,7 @@ void FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::show() {
             }
         }
     }
-    
+
     // Page flip
     _matrix->show();
 }

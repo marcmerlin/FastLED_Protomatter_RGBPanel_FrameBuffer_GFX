@@ -1,41 +1,19 @@
 #ifndef MATRIX_CONFIG
 #define MATRIX_CONFIG
-#include <FastLED_ESP32-HUB75-MatrixPanel_FrameBuffer_GFX.h>
+#include <FastLED_Protomatter_RGBPanel_FrameBuffer_GFX.h>
 
-// Step 1) Provide the size of each individual physical panel LED Matrix panel that is chained (or not) together
-#define PANEL_RES_X 64 // Number of pixels wide of each INDIVIDUAL panel module. 
-#define PANEL_RES_Y 64 // Number of pixels tall of each INDIVIDUAL panel module.
+#define WIDTH      64
+#define HEIGHT     64
+#define BIT_DEPTH  4
+#define BRIGHTNESS 255
 
-// Step 2) Provide details of the physical panel chaining that is in place.
-#define NUM_ROWS 1 // Number of rows of chained INDIVIDUAL PANELS
-#define NUM_COLS 1 // Number of INDIVIDUAL PANELS per ROW
-#define PANEL_CHAIN NUM_ROWS*NUM_COLS    // total number of panels chained one to another
+// Hardware pins mapping for Pimoroni Interstate 75 W (RP2350)
+uint8_t rgbPins[]  = {0, 1, 2, 3, 4, 5};
+uint8_t addrPins[] = {6, 7, 8, 9, 10}; 
+uint8_t clockPin   = 11;
+uint8_t latchPin   = 12;
+uint8_t oePin      = 13;
 
-// Step 3) How are the panels chained together?
-#define PANEL_CHAIN_TYPE CHAIN_TOP_RIGHT_DOWN
-
-// Refer to: https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA/tree/master/examples/VirtualMatrixPanel
-//      and: https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA/blob/master/doc/VirtualMatrixPanel.pdf
-
-#define VPANEL_W PANEL_RES_X*NUM_COLS
-#define VPANEL_H PANEL_RES_Y*NUM_ROWS
-
-// Step 4) Pin definitions
-// custom pin mapping (this one is Adafruit Matrixportal ESP32S3
-#define R1 42
-#define G1 41
-#define B1 40
-#define R2 38
-#define G2 39
-#define B2 37
-#define CH_A 45
-#define CH_B 36
-#define CH_C 48
-#define CH_D 35
-#define CH_E 21
-#define CLK 2
-#define LAT 47
-#define OE  14
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,12 +31,16 @@
 #include <LEDMatrix.h>
 #endif
 
-HUB75_I2S_CFG::i2s_pins _pins={R1, G1, B1, R2, G2, B2, CH_A, CH_B, CH_C, CH_D, CH_E, LAT, OE, CLK};
+// Allocate the 1D CRGB buffer backing FrameBuffer_GFX / FastLED
+CRGB leds[WIDTH * HEIGHT];
+
+Adafruit_Protomatter *pm_matrix = nullptr;
+
 
 /// Please ignore the "TILE" part, for externally managed framebuffers like RGBPanels,
 /// the resolution is coded here.
-const uint16_t MATRIX_TILE_WIDTH = VPANEL_W;
-const uint16_t MATRIX_TILE_HEIGHT= VPANEL_H;
+const uint16_t MATRIX_TILE_WIDTH = 64;
+const uint16_t MATRIX_TILE_HEIGHT= 64;
 
 // and these are used by LEDMatrix for Neopixel Matrices but do not change from 1 for RGBPanels
 const uint8_t MATRIX_TILE_H     = 1;  // number of matrices arranged horizontally
@@ -72,9 +54,6 @@ const uint16_t mh = MATRIX_TILE_HEIGHT * MATRIX_TILE_V;
 const uint32_t NUMMATRIX = mw*mh;
 const uint32_t NUM_LEDS = NUMMATRIX;
 
-MatrixPanel_I2S_DMA *hub75matrix = nullptr;
-VirtualMatrixPanel  *virtualDisp = nullptr;
-
 #ifdef LEDMATRIX
 // cLEDMatrix creation, don't allocate memory since we will feed it the framebuffer
 // created by SmartMatrix at runtime ledmatrix(false)
@@ -87,8 +66,7 @@ CRGB *matrixleds = nullptr;
 // RAM is available as static array allocation in global space, as RAM you can
 // get via malloc in setup (or even ps_malloc to use PSRAM as needed).
 // So we'll call Framebuffer_GFX->newLedsPtr and setvirtdisp to set those pointers correctly
-// Same thing with hub75matrix, which is passed so we can call brightness
-FastLED_ESP32_HUB75_MatrixPanel_FrameBuffer_GFX *matrix = new FastLED_ESP32_HUB75_MatrixPanel_FrameBuffer_GFX(matrixleds, MATRIX_TILE_WIDTH, MATRIX_TILE_HEIGHT, virtualDisp, hub75matrix);
+FastLED_Protomatter_RGBPanel_FrameBuffer_GFX *matrix = nullptr;
 
 // ----------------------------------------------------------------------------
 
@@ -142,8 +120,7 @@ void *mallocordie(const char *varname, uint32_t req, bool psram=true) {
     return NULL;
 }
 
-void matrix_setup(bool initserial=true, int reservemem = 40000) {
-    reservemem = reservemem; // squelch compiler warning if var is unused.
+void matrix_setup(bool initserial=true) {
 
     if (initserial) {
 	Serial.begin(115200);
@@ -165,6 +142,12 @@ void matrix_setup(bool initserial=true, int reservemem = 40000) {
     // Now we can finally set the framebuffer pointer (without this, the lib will crash)
     matrix->newLedsPtr(matrixleds);
 
+    // double buffering = true, if you are low on RAM, you can change to false
+    pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, true );
+    if (!pm_matrix) die("Can't allow pm_matrix");
+
+    matrix = new FastLED_Protomatter_RGBPanel_FrameBuffer_GFX(pm_matrix, matrixleds, mw, mh);
+
     show_free_mem("After matrixleds malloc");
     #ifdef LEDMATRIX
         Serial.println("ledmatrix.SetLEDArray");
@@ -172,32 +155,15 @@ void matrix_setup(bool initserial=true, int reservemem = 40000) {
     #endif
 
     Serial.println("HUB75 Matrix Init");
-    // Configure your matrix setup here
-    HUB75_I2S_CFG mxconfig(PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN);
+    ProtomatterStatus status = pm_matrix->begin();
+    if (status != PROTOMATTER_OK) {
+      Serial.print("Protomatter failed: ");
+      Serial.println((int)status);
+      while (1);
+    }
 
-    mxconfig.gpio = _pins;
-    // Can help with an off by one pixel display error on some panels
-    mxconfig.clkphase = false;
-
-    // OK, now we can create our matrix object
-    hub75matrix = new MatrixPanel_I2S_DMA(mxconfig);
-
-    // Allocate memory and start DMA display
-    if (! hub75matrix->begin()) die ("****** !KABOOM! I2S memory allocation failed ***********");
-    matrix->sethub75matrix(hub75matrix);
-
-    // create VirtualDisplay object based on our newly created dma_display object
-    virtualDisp = new VirtualMatrixPanel((*hub75matrix), NUM_ROWS, NUM_COLS, PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN_TYPE);
-    // Same comment as setfb above.
-    matrix->setvirtdisp(virtualDisp);
-
-    Serial.print("MATRIX_WIDTH: ");  Serial.println(PANEL_RES_X*PANEL_CHAIN);
-    Serial.print("MATRIX_HEIGHT: "); Serial.println(PANEL_RES_Y);
-    Serial.println("VIRTUAL PANEL WIDTH " + String(VPANEL_W));
-    Serial.println("VIRTUAL PANEL HEIGHT " + String(VPANEL_H));
-
-    Serial.println("HUB75 Virtual Matrix Init Done");
-    delay(1000);
+    Serial.println("New Protomatter RGBPanel Init Done!");
+    matrix->setBrightness(BRIGHTNESS);
 }
 
 #endif // MATRIX_CONFIG
