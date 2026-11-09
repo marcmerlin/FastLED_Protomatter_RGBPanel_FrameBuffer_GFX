@@ -206,7 +206,7 @@ void whitewarp();
 void spin1();
 
 
-#ifdef WIFI_HOSTNAME
+#ifdef WIFI
 extern void display_hostname();
 extern void on_wifi_connect();
 #endif
@@ -231,8 +231,10 @@ void newpattern()//generates all the randomness for each new pattern
     if (new_pattern) {
       Serial.print("Got new pattern (or IP) via serial ");
       Serial.println(new_pattern);
-      // If we received an IP, we're done
-      if (parse_new_IP(new_pattern)) return;
+      #if WIFI
+        // If we received an IP, we're done
+        if (parse_new_IP(new_pattern)) return;
+      #endif
     } else {
       Serial.print("Got serial char ");
       Serial.println(readchar);
@@ -241,7 +243,11 @@ void newpattern()//generates all the randomness for each new pattern
 
   if (readchar == 'r') {
     Serial.println("Serial => reboot");
-    rebootESP32();
+    #ifdef ESP32
+        rebootESP32();
+    #else
+        rebootFunc();
+    #endif
   }
   else if (readchar == 'h') {
     Serial.println(R"(
@@ -253,7 +259,7 @@ b => change brightness (if powering panel from USB, too bright can crash)
 B => save brightness to NVRAM (do not save until you test it doesn't crash)
 123 => change to pattern 123)");
 
-#ifdef WIFI_HOSTNAME
+#ifdef WIFI
     Serial.println(R"(
 i => show IP
 d => display hostname
@@ -262,6 +268,7 @@ w => set wifi mode (1: slave, 2: AP, 3: ForceAP)
 )");
 #endif
   }
+#ifdef WIFI
   else if (readchar == 'w') {
     Serial.read(); // read potential newline
     // defined and read in wifi_setup
@@ -278,11 +285,16 @@ w => set wifi mode (1: slave, 2: AP, 3: ForceAP)
         Serial.printf("Saving Wifi Mode %d to NVRAM\n\r", wifi_master_slave_forceap);
 	set_nvram_master_slave_forceap(wifi_master_slave_forceap);
       } else {
-	// Serial can come from wifi, so allow it to run
-	wifi_loop();
+	#if WIFI
+	  // Serial can come from wifi, so allow it to run
+	  wifi_loop();
+        #else
+	  delay(10);
+        #endif
       }
     }
   }
+#endif
   else if (readchar == 'b') {
     Serial.read(); // read potential newline
     Serial.printf("Current Brightness: %d\r\n", matrix_brightness);
@@ -297,17 +309,24 @@ w => set wifi mode (1: slave, 2: AP, 3: ForceAP)
         newbrightness = newbrightness * 10 + c - '0';
       } else {
 	// Serial can come from wifi, so allow it to run
-	wifi_loop();
+	#if WIFI
+	  // Serial can come from wifi, so allow it to run
+	  wifi_loop();
+        #else
+	  delay(10);
+        #endif
       }
     }
 
     change_brightness(newbrightness);
   }
+#if NVRAM
   else if (readchar == 'B') {
     Serial.printf("Saving Current Brightness To Flash: %d\r\n", matrix_brightness);
     set_nvram_brightness(matrix_brightness);
   }
-#ifdef WIFI_HOSTNAME
+#endif
+#ifdef WIFI
   else if (readchar == 'H') {
     Serial.read(); // read potential newline
     Serial.printf("Current Hostname: %s\r\n", get_hostname().c_str());
@@ -387,7 +406,7 @@ w => set wifi mode (1: slave, 2: AP, 3: ForceAP)
   if (new_pattern) pattern = new_pattern;
 
 
-#ifdef WIFI_HOSTNAME
+#ifdef WIFI
   if (!WIFI_SLAVE_MODE) {
       String demo_str = String(pattern);
       send_to_slaves(demo_str.c_str());

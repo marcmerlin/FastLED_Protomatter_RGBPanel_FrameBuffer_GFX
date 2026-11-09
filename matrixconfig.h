@@ -9,6 +9,8 @@
 #define BRIGHTNESS 255
 #endif
 
+uint8_t matrix_brightness = BRIGHTNESS;
+
 // Hardware pins mapping for Pimoroni Interstate 75 W (RP2350)
 uint8_t rgbPins[]  = {0, 1, 2, 3, 4, 5};
 uint8_t addrPins[] = {6, 7, 8, 9, 10}; 
@@ -57,7 +59,8 @@ const uint16_t mh = MATRIX_TILE_HEIGHT * MATRIX_TILE_V;
 // cLEDMatrix creation, don't allocate memory since we will feed it the framebuffer
 // created by SmartMatrix at runtime ledmatrix(false)
 cLEDMatrix<MATRIX_TILE_WIDTH, -MATRIX_TILE_HEIGHT, HORIZONTAL_MATRIX,
-    MATRIX_TILE_H, MATRIX_TILE_V, HORIZONTAL_BLOCKS> ledmatrix(false);
+    MATRIX_TILE_H, MATRIX_TILE_V, HORIZONTAL_BLOCKS> *ledmatrix_ptr = nullptr;
+#define ledmatrix (*ledmatrix_ptr)
 #endif
 CRGB *matrixleds = nullptr;
 
@@ -88,6 +91,11 @@ uint16_t XY( uint8_t x, uint8_t y) {
 uint16_t XY16( uint16_t x, uint16_t y) {
     return matrix->XY(x,y);
 }
+
+void(* rebootFunc) (void) = 0; // jump to 0 to cause a sofware reboot
+#if ESP32
+void rebootESP32() { ESP.restart(); } // nicer ESP32 specific reboot
+#endif
 
 
 // ----------------------------------------------------------------------------
@@ -146,11 +154,19 @@ void matrix_setup(bool initserial=true) {
 
     if (initserial) {
 	Serial.begin(115200);
+      #if defined(ARDUINO_ARCH_RP2040)
+        // Wait up to 5 seconds for Linux cdc_acm + serial terminal to open
+        uint32_t t0 = millis();
+        while (!Serial && (millis() - t0 < 5000)) {
+            delay(10);
+        }
+      #endif
         Serial.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Serial.begin");
-	delay(250);
+	Serial.flush();
     }
 
     Serial.println("Matrix FB Init");
+    Serial.flush();
     // ESP32 has more memory available for allocation in setup than in global
     // (if this were a global array), so we use malloc here.
     // https://forum.arduino.cc/index.php?topic=647833
@@ -161,18 +177,21 @@ void matrix_setup(bool initserial=true) {
     Serial.print(" for ");
     Serial.print(NUMMATRIX);
     Serial.println(" pixels");
-    // Now we can finally set the framebuffer pointer (without this, the lib will crash)
-    matrix->newLedsPtr(matrixleds);
 
     // double buffering = true, if you are low on RAM, you can change to false
-    pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, true );
-    if (!pm_matrix) die("Can't allow pm_matrix");
+    //pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, true );
+    pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, false );
+    if (!pm_matrix) die("Can't allocate pm_matrix");
 
     matrix = new FastLED_Protomatter_RGBPanel_FrameBuffer_GFX(pm_matrix, matrixleds, mw, mh);
+    // Now we can finally set the framebuffer pointer (without this, the lib will crash)
+    if (!matrix) die("Can't allocate _matrix");
+    matrix->newLedsPtr(matrixleds);
 
     show_free_mem("After matrixleds malloc");
     #ifdef LEDMATRIX
         Serial.println("ledmatrix.SetLEDArray");
+	ledmatrix_ptr = new cLEDMatrix<MATRIX_TILE_WIDTH, -MATRIX_TILE_HEIGHT, HORIZONTAL_MATRIX, MATRIX_TILE_H, MATRIX_TILE_V, HORIZONTAL_BLOCKS>(false);
         ledmatrix.SetLEDArray(matrixleds);
     #endif
 
@@ -181,11 +200,12 @@ void matrix_setup(bool initserial=true) {
     if (status != PROTOMATTER_OK) {
       Serial.print("Protomatter failed: ");
       Serial.println((int)status);
-      while (1);
+      die("FAIL");
     }
+    Serial.println("New Protomatter RGBPanel Init Done! Running matrix->begin");
 
-    Serial.println("New Protomatter RGBPanel Init Done!");
-    matrix->setBrightness(BRIGHTNESS);
+    matrix->begin();
+    matrix->setBrightness(matrix_brightness);
 }
 
 #endif // MATRIX_CONFIG
