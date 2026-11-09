@@ -26,11 +26,7 @@
 #endif
 
 
-#define P16BY16X4
-//#define P32BY8X3
-#if defined(P16BY16X4) || defined(P32BY8X3)
 #define BM32
-#endif
 
 #ifdef BM32
 #include "google32.h"
@@ -575,8 +571,10 @@ void loop() {
     Serial.println("Count pixels done");
     delay(1000);
 
+#if 0
     display_four_white();
     delay(3000);
+#endif
 
     Serial.print("Screen pixmap capacity: ");
     Serial.println(pixmap_count);
@@ -657,7 +655,6 @@ void setup() {
     delay(1000);
     Serial.begin(115200);
     matrix_setup();
-    // just FYI this is not needed for the ESP32 DMA lib, but other libs may need it.
     matrix->begin();
 
     matrix->setTextWrap(false);
@@ -665,7 +662,7 @@ void setup() {
     Serial.println("If the code crashes here, decrease the brightness or turn off the all white display below");
     // Test full bright of all LEDs. If brightness is too high
     // for your current limit (i.e. USB), decrease it.
-//#define DISABLE_WHITE
+#define DISABLE_WHITE
 #ifndef DISABLE_WHITE
     matrix->fillScreen(LED_WHITE_HIGH);
     matrix->show();
