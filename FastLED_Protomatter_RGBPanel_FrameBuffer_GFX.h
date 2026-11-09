@@ -41,7 +41,6 @@ class FastLED_Protomatter_RGBPanel_FrameBuffer_GFX : public Framebuffer_GFX {
 
   private:
     Adafruit_Protomatter *_matrix;
-    CRGB *_leds;
 };
 
 #endif

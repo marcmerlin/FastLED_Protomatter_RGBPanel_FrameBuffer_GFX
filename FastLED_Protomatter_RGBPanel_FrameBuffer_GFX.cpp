@@ -12,11 +12,10 @@
 FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::FastLED_Protomatter_RGBPanel_FrameBuffer_GFX(
     Adafruit_Protomatter *matrix, CRGB *leds, uint16_t w, uint16_t h) : Framebuffer_GFX(leds, w, h, NULL) {
     _matrix = matrix;
-    _leds = leds; 
 }
 
 void FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::show() {
-    if (!_leds || !_matrix) return;
+    if (!_fb || !_matrix) return;
 
     uint8_t b_scale = FastLED.getBrightness();
     int16_t w = width();
@@ -26,7 +25,7 @@ void FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::show() {
         // Maximum speed: No brightness math
         for (int16_t y = 0; y < h; y++) {
             for (int16_t x = 0; x < w; x++) {
-                const CRGB &pixel = _leds[XY(x, y)];
+                const CRGB &pixel = _fb[XY(x, y)];
                 // Fast 565 conversion 
                 uint16_t c = ((pixel.r & 0xF8) << 8) | ((pixel.g & 0xFC) << 3) | (pixel.b >> 3);
                 _matrix->drawPixel(x, y, c);
@@ -36,7 +35,7 @@ void FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::show() {
         // Fast scaling: Uses scale8 (1-cycle ARM multiply)
         for (int16_t y = 0; y < h; y++) {
             for (int16_t x = 0; x < w; x++) {
-                const CRGB &pixel = _leds[XY(x, y)];
+                const CRGB &pixel = _fb[XY(x, y)];
                 uint8_t r = scale8(pixel.r, b_scale);
                 uint8_t g = scale8(pixel.g, b_scale);
                 uint8_t b = scale8(pixel.b, b_scale);
