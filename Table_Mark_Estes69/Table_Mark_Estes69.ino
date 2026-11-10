@@ -485,38 +485,13 @@ effects_ptr = new Effects();
     wifi_setup(rebuild_main_page_local, on_ota_start, on_wifi_connect);
   #endif
 
-#ifdef SHOW_PATTERN_NUM
-  // default font is 5x7, this one is 3x5
-  matrix->setFont(&TomThumb);
-#endif
-  // Disable showing FPS on serial port in Framebuffer_GFX, but compute it
-#ifdef DISPLAY_FPS
-  matrix->setfpsfreq(0);
-#endif
-
   display_hostname();
   matrix->show();
 }
 
-void marc_overlay() {
-  matrix->fillRect(0, 0, 64, 8, 0);
-  // Reset to default adafruit font, that font wants cursor at top left corner
-  matrix->setFont();
-  matrix->setCursor(0, 0);
-  matrix->setTextColor(matrix->Color(0,255,0));
-  matrix->print("Marc");
-  matrix->setCursor(28, 0);
-  matrix->setTextColor(matrix->Color(0,0,255));
-  matrix->print("MERLIN");
-  matrix->fillRect(0, 55, 64, 9, 0);
-  matrix->setCursor(0, 56);
-  matrix->setTextColor(matrix->Color(255,255,0));
-  matrix->print("SuperCon");
-  matrix->setCursor(51, 56);
-  matrix->setTextColor(matrix->Color(255,0,0));
-  matrix->print("26");
-}
-
+// void local_overlay() {}
+// defined here
+#include "local_overlay.h"
 
 void loop()
 {
@@ -529,8 +504,6 @@ void loop()
     return;
   }
 
-  // 64x64 on RP2350 at 125Mhz is 224 FPS
-  EVERY_N_SECONDS(30) Serial.printf("\r\n>>>> Panel FPS: %d <<<<\r\n", matrix->backend_fps());
 
   hue += 1;//increment the color basis
   h = hue;  //set h to the color basis
@@ -564,9 +537,36 @@ void loop()
   counter++;//increment the counter which is used for many things
   // spititout();//map the 2d screen to the 8 outpus and push them out on my other matrix, not used here
 
-  marc_overlay();
+  local_overlay();
 
+  uint16_t update_freq = matrix->fps();
+#ifdef SHOW_PATTERN_NUM
+  // Make dark overlay for the white font to be visible
+  matrix->fillRect(0, 0, 4 * print_width, 7, 0);
+  matrix->setFont(&TomThumb);
+  matrix->setCursor(0, 6);
+  matrix->setTextColor(matrix->Color(255,255,255));
+  matrix->print(pattern);
+#endif
+#ifdef DISPLAY_FPS
+  // Make dark overlay for the white font to be visible
+  matrix->fillRect(MATRIX_WIDTH - 1 - 4 * 3, 0, 4 * 3 + 1, 7, 0);
+  matrix->setFont(&TomThumb);
+  matrix->setCursor(MATRIX_WIDTH - 4 * 3, 6);
+  matrix->setTextColor(matrix->Color(255,255,255));
+  matrix->print(update_freq);
+#endif
+
+  EVERY_N_SECONDS(30) {
+    // On RP2350, demo 82 at 64x64 updates at 7 to 10 fps (TODO move RGBPanel ISR to 2nd core)
+    Serial.printf("\r\nFramebuffer::GFX fps: %d\r\n", update_freq);
+    // 64x64 on RP2350 at 125Mhz is 224 FPS
+    #ifdef ARDUINO_ARCH_RP2040
+        Serial.printf(">>>> Panel FPS: %d <<<<\r\n", matrix->backend_fps());
+    #endif
+  }
   matrix->show();
+
   delay(waiter);//frame rate control
   if (Serial.available()) readchar = Serial.read(); else readchar = 0;
   if (readchar > 31 || millis() > lastmilly + dwell || nextsong) //when to change patterns
@@ -589,5 +589,4 @@ void loop()
       regenpattern();
     }
   }
-
 }

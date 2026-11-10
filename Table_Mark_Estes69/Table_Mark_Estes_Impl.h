@@ -3033,7 +3033,7 @@ void runpattern() {//here the actuall effect is called based on the pattern numb
   matrix->fillRect(0, 0, 4 * print_width, 7, 0);
 #endif
 #ifdef DISPLAY_FPS
-  // Make dark overlay for the white font to be visible
+  // Make dark overlay in case the screen is used for transformation/mirroring
   matrix->fillRect(MATRIX_WIDTH - 1 - 4 * 3, 0, 4 * 3 + 1, 7, 0);
 #endif
   switch (pattern) {
@@ -4427,20 +4427,6 @@ void runpattern() {//here the actuall effect is called based on the pattern numb
       }
       break;
   }
-
-
-#ifdef SHOW_PATTERN_NUM
-  // Make dark overlay for the white font to be visible
-  matrix->fillRect(0, 0, 4 * print_width, 7, 0);
-  matrix->setCursor(1, 6);
-  matrix->print(pattern);
-#endif
-#ifdef DISPLAY_FPS
-  // Make dark overlay for the white font to be visible
-  matrix->fillRect(MATRIX_WIDTH - 1 - 4 * 3, 0, 4 * 3 + 1, 7, 0);
-  matrix->setCursor(MATRIX_WIDTH - 4 * 3, 6);
-  matrix->print(matrix->fps());
-#endif
 }
 
 
