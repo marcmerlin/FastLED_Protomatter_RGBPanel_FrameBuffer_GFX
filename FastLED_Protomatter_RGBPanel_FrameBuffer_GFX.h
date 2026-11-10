@@ -38,6 +38,11 @@ class FastLED_Protomatter_RGBPanel_FrameBuffer_GFX : public Framebuffer_GFX {
     
     void setBrightness(uint8_t b) { FastLED.setBrightness(b); }
     Adafruit_Protomatter *getMatrix() { return _matrix; }
+    uint16_t backend_fps() const { return _backend_fps; }
+
+  protected:
+    uint32_t _last_frame_count_time = 0;
+    uint16_t _backend_fps = 0;
 
   private:
     Adafruit_Protomatter *_matrix;

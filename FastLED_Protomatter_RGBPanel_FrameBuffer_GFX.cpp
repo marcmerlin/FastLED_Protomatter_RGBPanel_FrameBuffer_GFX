@@ -47,5 +47,28 @@ void FastLED_Protomatter_RGBPanel_FrameBuffer_GFX::show() {
 
     // Page flip
     _matrix->show();
+
+    uint32_t now = millis();
+  
+    // Initialize the timer on the very first run to prevent a massive 
+    // initial time_diff if show() is called late in the boot sequence.
+    if (_last_frame_count_time == 0) {
+      _last_frame_count_time = now;
+      _matrix->getFrameCount(); // Clear the underlying counter
+      return;
+    }
+    
+    uint32_t time_diff = now - _last_frame_count_time;
+    
+    // Compute hardware refresh rate approximately once per second
+    if (time_diff >= 1000) {
+      uint32_t frames = _matrix->getFrameCount();
+      
+      // Scale frames by the exact millisecond duration to get true Hz
+      _backend_fps = (frames * 1000) / time_diff;
+      
+      _last_frame_count_time = now;
+    }
+
 }
 // vim:sts=4:sw=4

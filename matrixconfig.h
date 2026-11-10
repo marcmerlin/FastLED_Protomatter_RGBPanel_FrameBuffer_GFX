@@ -192,9 +192,9 @@ void matrix_setup(bool initserial=true) {
     Serial.print(NUMMATRIX);
     Serial.println(" pixels");
 
-    // double buffering = true, if you are low on RAM, you can change to false
-    //pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, true );
-    pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, false );
+    // if you are low on RAM, you can change to false
+    bool doublebuffering = true;
+    pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, doublebuffering );
     if (!pm_matrix) die("Can't allocate pm_matrix");
 
     matrix = new FastLED_Protomatter_RGBPanel_FrameBuffer_GFX(pm_matrix, matrixleds, mw, mh);

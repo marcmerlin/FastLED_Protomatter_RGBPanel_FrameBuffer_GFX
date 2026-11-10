@@ -158,7 +158,7 @@ float Dampening[BallCount];
 CRGBPalette16 thepal;
 CRGB darkcolor;
 CRGB lightcolor;
-char readchar;
+volatile char readchar;
 
 #ifdef SHOW_PATTERN_NUM
 uint8_t print_width = 3;
@@ -524,6 +524,9 @@ void loop()
     EVERY_N_SECONDS(1) Serial.println("Pausing main loop to show other thread output");
     return;
   }
+
+  // 64x64 on RP2350 at 125Mhz is 224 FPS
+  EVERY_N_SECONDS(10) Serial.printf("Panel FPS: %d\r\n", matrix->backend_fps());
 
   hue += 1;//increment the color basis
   h = hue;  //set h to the color basis

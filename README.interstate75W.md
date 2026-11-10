@@ -35,9 +35,9 @@ and you get:
 ```
 Then flashing will work
 
-2) use my 'B' command in TME69 that calls 'rp2040.rebootToBootloader();'.  
+2) use my 'F' command in TME69 that calls 'rp2040.rebootToBootloader();' and lets you reflash without holding back buttons. 
 
-But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip.
+But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip. Why, why, why?  If you find a fix, pelase sahre PR.
 
 How about flashing with picotool?
 
