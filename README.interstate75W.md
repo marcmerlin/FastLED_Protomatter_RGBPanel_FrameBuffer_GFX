@@ -8,7 +8,8 @@ People are excited about the RP2350 because it's around 0.50c to $1 cheaper than
 - Well established ESP32 code like OmEspHelpers does not work since it's another chip
 - OTA is supposed to be supported, but does not work the same
 
-
+Default/UF2 vs picotool
+-----------------------
 flashing:
 - default/UF2 is fragile, it relies on arduino connecting via the fragile serial port connection, telling the chip to reboot as usb-storage and uploading a binary. The arduino env used to be able to send the serial command to switch the chip to usb-storage, but as I write this it is repeatedly failing with:
 ```
@@ -35,9 +36,6 @@ and you get:
 ```
 Then flashing will work
 
-2) use my 'F' command in TME69 that calls 'rp2040.rebootToBootloader();' and lets you reflash without holding back buttons. 
-
-But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip. Why, why, why?  If you find a fix, pelase sahre PR.
 
 How about flashing with picotool?
 
@@ -71,6 +69,13 @@ processing.app.SerialException: Error opening serial port '/dev/ttyACM0'. Try co
 	at java.lang.Thread.run(Thread.java:748)
 Error opening serial port '/dev/ttyACM0'. Try consulting the documentation at http://playground.arduino.cc/Linux/All#Permission
 ```
+
+USB Stack: Pico USB vs Adafruit TinyUSB
+---------------------------------------
+use my 'F' command in TME69 that calls 'rp2040.rebootToBootloader();' and lets you reflash without holding back buttons. 
+
+But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip. Why, why, why?  If you find a fix, pelase sahre PR.
+
 
 I'll note that here is a pretty big issue with rebooting the device and catching early boot messages as the serial port is not visible on linux for a while. You can add huge delays or while (! Serial), but if you do that you're also stopping the device from booting if there is no USB cable connected.
 

@@ -330,20 +330,25 @@ void setup()
   ////////////////////////////////////////////////////////////////////////////
   // Matrix Init
   ////////////////////////////////////////////////////////////////////////////
-  // 1. Initialize serial port under Adafruit TinyUSB
-  // Note that the serial port is totally starved by Protomatter, so most serial
+  // 1. Initialize serial port
+  // Note that the serial port is likely starved by Protomatter, so most serial
   // is lost. TODO: move Protomatter to setup1() and loop1()
   Serial.begin(115200);
   
   // 2. Allow up to 4 seconds for Linux host CDC-ACM enumeration
   uint32_t t0 = millis();
   while (!Serial && (millis() - t0 < 4000)) {
-    delay(10);
+    delay(500);
+    Serial.println("Priming Serial (especially for RP2xxx chips)");
+    Serial.flush();
   }
-  delay(100);
+
+  // this is dirty but needed. On RP2350, Serial returns ok, but the end to 
+  // end connection isn't working and the boot messages are lost without this
+  delay(1000);
 
   Serial.println("\n\n============================================");
-  Serial.println("RP2350 HARDWARE BOOT OK: Entering setup()");
+  Serial.println("RP2xxx HARDWARE BOOT OK: Entering setup()");
   Serial.println("============================================");
   Serial.flush();
 
@@ -360,7 +365,7 @@ void setup()
   matrix->fillRect(0, 32, 64, 16, matrix->Color(0, 0, 255));   // Blue bottom
   matrix->show();
 
-  Serial.println(">> Test pattern pushed via matrix->show().");
+  Serial.println("Test pattern pushed via matrix->show().");
   Serial.flush();
 
   x = random16();
@@ -474,7 +479,6 @@ effects_ptr = new Effects();
 
   effects.leds = matrixleds;
   effects.Setup();
-  matrix->show();
 
   // Do not init wifi before matrix_setup since wifi has callbacks that display on matrix
   #ifdef WIFI
@@ -490,8 +494,8 @@ effects_ptr = new Effects();
   matrix->setfpsfreq(0);
 #endif
 
-
   display_hostname();
+  matrix->show();
 }
 
 void marc_overlay() {
@@ -526,7 +530,7 @@ void loop()
   }
 
   // 64x64 on RP2350 at 125Mhz is 224 FPS
-  EVERY_N_SECONDS(10) Serial.printf("Panel FPS: %d\r\n", matrix->backend_fps());
+  EVERY_N_SECONDS(30) Serial.printf("\r\n>>>> Panel FPS: %d <<<<\r\n", matrix->backend_fps());
 
   hue += 1;//increment the color basis
   h = hue;  //set h to the color basis

@@ -275,8 +275,8 @@ d => display hostname
 H => set hostname in NVRAM
 w => set wifi mode (1: slave, 2: AP, 3: ForceAP)
 )");
-Serial.println();
 #endif
+Serial.println();
   }
 #ifdef WIFI
   else if (readchar == 'w') {

@@ -164,6 +164,19 @@ void *mallocordie(const char *varname, uint32_t req, bool psram=true) {
     return NULL;
 }
 
+#ifdef ARDUINO_ARCH_RP2040
+    #ifdef USE_TINYUSB
+      // Adafruit TinyUSB is active
+      #include <Adafruit_TinyUSB.h>
+      #define CURRENT_USB_STACK "Adafruit TinyUSB"
+    #else
+      // Pico SDK is active
+      #define CURRENT_USB_STACK "Pico SDK CDC"
+    #endif
+#else
+    #define CURRENT_USB_STACK "Not RP2xxx chip, USB Serial should be fine"
+#endif
+
 void matrix_setup(bool initserial=true) {
 
     if (initserial) {
@@ -193,6 +206,8 @@ void matrix_setup(bool initserial=true) {
     Serial.println(" pixels");
 
     // if you are low on RAM, you can change to false
+    // without double buffering the screen flashes a lot as it's clearing parts of the
+    // framebuffer, so visually you really want it on
     bool doublebuffering = true;
     pm_matrix = new Adafruit_Protomatter( WIDTH, BIT_DEPTH, 1, rgbPins, sizeof(addrPins), addrPins, clockPin, latchPin, oePin, doublebuffering );
     if (!pm_matrix) die("Can't allocate pm_matrix");
@@ -220,6 +235,13 @@ void matrix_setup(bool initserial=true) {
 
     matrix->begin();
     matrix->setBrightness(matrix_brightness);
+
+    Serial.print("Compiled with USB Stack: ");
+    Serial.println(CURRENT_USB_STACK);
+#ifdef USE_TINYUSB
+    Serial.println(">>>>>> WARNING: Adafruit TinyUSB does not seem to handle the reboot to bootloader command, compile with Pico SDK, or send 'F' to manually switch to bootloader before you start flashing <<<<<<");
+    #pragma message ">>>>>> WARNING: Adafruit TinyUSB does not seem to handle the reboot to bootloader command, compile with Pico SDK, or send 'F' to manually switch to bootloader before you start flashing <<<<<<";
+#endif    
 }
 
 #endif // MATRIX_CONFIG
