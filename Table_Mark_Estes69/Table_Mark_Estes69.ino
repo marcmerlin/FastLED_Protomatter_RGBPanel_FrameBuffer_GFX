@@ -206,7 +206,7 @@ volatile uint32_t pause_until_millis = 0;
       case HTML_REBOOTESP32:
   	if (!value) break;
   	Serial.println("Reboot ESP32 pressed");
-  	rebootESP32();
+  	reboot();
   	break;
   
       case HTML_BESTOF:
@@ -516,9 +516,6 @@ void marc_overlay() {
 
 void loop()
 {
-  // Yield to the Adafruit TinyUSB stack to keep serial logs alive
-  yield();
-
   #if WIFI
     wifi_loop();
   #endif

@@ -241,13 +241,19 @@ void newpattern()//generates all the randomness for each new pattern
     }
   }
 
+#if defined(ARDUINO_ARCH_RP2040)
+  if (readchar == 'F') {
+    Serial.println("Serial => Flash/Bootloader Mode");
+    Serial.flush();
+    delay(50);
+    rp2040.rebootToBootloader();
+  }
+#endif
+
+
   if (readchar == 'r') {
     Serial.println("Serial => reboot");
-    #ifdef ESP32
-        rebootESP32();
-    #else
-        rebootFunc();
-    #endif
+    reboot();
   }
   else if (readchar == 'h') {
     Serial.println(R"(
@@ -258,6 +264,9 @@ p => prev pattern
 b => change brightness (if powering panel from USB, too bright can crash)
 B => save brightness to NVRAM (do not save until you test it doesn't crash)
 123 => change to pattern 123)");
+#if defined(ARDUINO_ARCH_RP2040)
+Serial.println("F => Flash/Bootloader Mode");
+#endif
 
 #ifdef WIFI
     Serial.println(R"(
@@ -266,6 +275,7 @@ d => display hostname
 H => set hostname in NVRAM
 w => set wifi mode (1: slave, 2: AP, 3: ForceAP)
 )");
+Serial.println();
 #endif
   }
 #ifdef WIFI

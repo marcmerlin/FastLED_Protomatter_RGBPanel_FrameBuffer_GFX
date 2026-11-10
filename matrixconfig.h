@@ -92,11 +92,25 @@ uint16_t XY16( uint16_t x, uint16_t y) {
     return matrix->XY(x,y);
 }
 
-void(* rebootFunc) (void) = 0; // jump to 0 to cause a sofware reboot
-#if ESP32
-void rebootESP32() { ESP.restart(); } // nicer ESP32 specific reboot
-#endif
+void reboot() {
+#if defined(ARDUINO_ARCH_RP2040)
+  // Raspberry Pi RP2040 and RP2350
+  rp2040.reboot();
 
+#elif defined(ESP32) || defined(ESP8266)
+  // Espressif chips
+  ESP.restart();
+
+#elif defined(CORE_TEENSY) || defined(__arm__)
+  // Teensy and generic ARM Cortex-M (STM32, SAMD, etc.)
+  NVIC_SystemReset();
+
+#else
+  // Fallback for 8-bit AVR (Arduino Uno, Mega, Nano)
+  void (*resetFunc)(void) = 0;
+  resetFunc();
+#endif
+}
 
 // ----------------------------------------------------------------------------
 
