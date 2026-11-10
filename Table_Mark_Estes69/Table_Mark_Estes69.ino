@@ -42,64 +42,36 @@
   #endif
 */
 
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 // Aurora includes
 #include "matrix.h"
-#if 0
-#include "Effects.h"
 #include "Drawable.h"
 #include "Boid.h"
 #include "Attractor.h"
 #include "Geometry.h"
 #include "PatternAttract.h"
-PatternAttract attract;
 #include "PatternBounce.h"
-PatternBounce bounce;
 #include "PatternCube.h"
-PatternCube cube;
 #include "PatternFlock.h"
-PatternFlock aflock;
 #include "PatternFlowField.h"
-PatternFlowField flowfield;
 #include "PatternIncrementalDrift.h"
-PatternIncrementalDrift incrementaldrift;
 #include "PatternIncrementalDrift2.h"
-PatternIncrementalDrift2 incrementaldrift2;
 #include "PatternPendulumWave.h"
-PatternPendulumWave pendulumwave;
 #include "PatternRadar.h"
-PatternRadar radar;
 #include "PatternSpiral.h"
-PatternSpiral spiral;
 #include "PatternSpiro.h"
-PatternSpiro spiro;
 #include "PatternSwirl.h"
-PatternSwirl swirl;
 #include "PatternWave.h"
-PatternWave wave;
-#endif
 #pragma GCC diagnostic pop
 
+extern Effects *effects_ptr;
+#define effects (*effects_ptr)
 
-AuroraDrawable* items[] = {
-#if 0
-  &attract,//0
-  &bounce,//1
-  &cube,//2
-  &aflock,//3
-  &flowfield,//4
-  &incrementaldrift,//5
-  &incrementaldrift2,//6
-  &pendulumwave,//7
-  &cube,//8  was radar
-  &spiral,//9
-  &spiro,//10
-  &swirl,//11
-  &wave,//12
-#endif
-};
+AuroraDrawable* items[13];
 AuroraDrawable *patternz;
+
 
 // no-op for now, need to write code
 bool DEMO_BESTOF = true;
@@ -166,6 +138,10 @@ uint8_t noise[BIGGER][BIGGER];
 //CRGBPalette16 currentPalette( PartyColors_p );
 CRGBPalette16 currentPalette;
 uint8_t       colorLoop = 1;
+
+// Define the actual pointer for the Effects macro we added in the header
+Effects *effects_ptr = nullptr;
+
 
 float  mscale = 1.4, fps = 30;
 float radius, xslope[MAXBIG], yslope[MAXBIG], xfire[MAXBIG], yfire[MAXBIG], cangle, sangle;
@@ -396,6 +372,39 @@ void setup()
   ImpactVelocityStart = sqrt( -2 * Gravity );
   item = random(13);
 
+// Safely construct Effects now that hardware is awake
+effects_ptr = new Effects();
+
+  // Construct patterns in permanent memory using 'static'
+  static PatternAttract attract;
+  static PatternBounce bounce;
+  static PatternCube cube;
+  static PatternFlock aflock;
+  static PatternFlowField flowfield;
+  static PatternIncrementalDrift incrementaldrift;
+  static PatternIncrementalDrift2 incrementaldrift2;
+  static PatternPendulumWave pendulumwave;
+  static PatternRadar radar;
+  static PatternSpiral spiral;
+  static PatternSpiro spiro;
+  static PatternSwirl swirl;
+  static PatternWave wave;
+
+  // Bind their addresses to the global items array
+  items[0] = &attract;
+  items[1] = &bounce;
+  items[2] = &cube;
+  items[3] = &aflock;
+  items[4] = &flowfield;
+  items[5] = &incrementaldrift;
+  items[6] = &incrementaldrift2;
+  items[7] = &pendulumwave;
+  items[8] = &cube; // (was radar)
+  items[9] = &spiral;
+  items[10] = &spiro;
+  items[11] = &swirl;
+  items[12] = &wave;
+
 #ifdef TME_AUDIO
   Serial1.begin(57600);
 
@@ -507,6 +516,9 @@ void marc_overlay() {
 
 void loop()
 {
+  // Yield to the Adafruit TinyUSB stack to keep serial logs alive
+  yield();
+
   #if WIFI
     wifi_loop();
   #endif
