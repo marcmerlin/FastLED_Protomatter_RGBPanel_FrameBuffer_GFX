@@ -1,16 +1,25 @@
-FastLED_ESP32-HUB75-MatrixPanel_FrameBuffer_GFX: FrameBuffer_GFX Driver for ESP32-HUB75-MatrixPanel
-===================================================================================================
-
-This is a display driver for Framebuffer::GFX that displays on RGB Panels using
-https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA . It runs on top of the same code that https://github.com/marcmerlin/Framebuffer_GFX and therefore provides access to the usual 
-trio of APIs: FastLED, Adafruit::GFX (via Adafruit::NeoMatrix compatibility using FastLED::NeoMatrix)
-and LEDMatrix compatibility too. To get example demo code, go to:
+FastLED_Protomatter_RGBPanel_FrameBuffer_GFX: FrameBuffer_GFX Driver for Adafruit_Protomatter RGB Panels
+========================================================================================================
+This is a display driver for Framebuffer::GFX that displays on RGB Panels using https://github.com/adafruit/Adafruit_Protomatter . 
+It runs on top of the same code that https://github.com/marcmerlin/Framebuffer_GFX 
+and therefore provides access to the usual trio of APIs: FastLED, Adafruit::GFX 
+(via Adafruit::NeoMatrix compatibility using FastLED::NeoMatrix) and LEDMatrix compatibility too. 
+To get more example demo code (outside of the few included here), go to:
 https://github.com/marcmerlin/FastLED_NeoMatrix_SmartMatrix_LEDMatrix_GFX_Demos
 
-Here is a video demo of a 24bpp framebuffer based set of demos that simply can't run on ESP32-HUB75-MatrixPanel-DMA without this framebuffer driver:
-https://www.youtube.com/watch?v=1d6U-6twpCk
+Here is a video demo of a 24bpp framebuffer based set of demos that simply can't run on Adafruit_Protomatter without this framebuffer driver: https://www.youtube.com/watch?v=1d6U-6twpCk  (click for video)
+<a href="https://www.youtube.com/watch?v=1d6U-6twpCk">
 <img width="1134" height="769" alt="image" src="https://github.com/user-attachments/assets/c54aeab8-d9fd-4c9c-8e2e-fb816df0eec1" />
+</a>
+Yes, the video above was actually made with an Adafruit S3 MatrixPortal, but the point is that it looks 100% the same with FastLED_Protomatter_RGBPanel_FrameBuffer_GFX
 
+On top of many many other backends supported, with this driver you can switch back and forth between ESP32S3 like Adafruit ESP32-S3 MatrixPortal and RP2350 like Interstate 75W RGBPanel board. They look so similar, but trust me the driver code is not similar at all!  However with this library, you get not to care as it's abstracted away for you: 
+https://youtu.be/iTXz6gqB7NY (click for video)
+<a href="https://youtu.be/iTXz6gqB7NY">
+<img width="1128" height="726" alt="image" src="https://github.com/user-attachments/assets/4b1dfe4a-6d7a-4e19-b637-9f860eb5f414" />
+</a>
+
+<img width="1495" height="752" alt="image" src="https://github.com/user-attachments/assets/335f390d-089e-49fe-8035-333eec47367d" />
 
 Installation
 ------------
@@ -65,7 +74,7 @@ rpi-rgb-led-matrix - FastLED_RPIRGBPanel_GFX ---/   LEDMatrix (optional)   `LEDM
 ArduinoOnPC X11/linux - FastLED_TFTWrapper_GFX /
 FastLED_SDL (linux)   -  FastLED_NeoMatrix   -/
 ```
-Other examples FastLED Matrix vs SmartMatrix matrix, still runnign the same code: 
+Other examples FastLED Matrix vs SmartMatrix matrix, still running the same code: 
 <img width="1024" height="768" alt="image" src="https://github.com/user-attachments/assets/63b2daf4-1c63-42b5-aec7-3412aab30cf1" />
 
 And a 3 panel smartmatrix vs a tiny TFT of the exact same 96x64 resolution, both running the same code:
@@ -75,7 +84,7 @@ And a 3 panel smartmatrix vs a tiny TFT of the exact same 96x64 resolution, both
 So you write against any of the 3 APIs in Framebuffer::GFX, and you get to run on all hardware backends
 without having to change your code, including switching from teensy to ESP32, or rPi to display on RGBPanels.
 
-I should stress that for RGBPanels, if you're writing code for ESP32 and ESP32-HUB75-MatrixPanel, you 
+I should stress that for RGBPanels, if you're writing code for RP2040/RP2350 and Adafruit_Protomatter, you 
 absolutely want to use this glue driver, because when you decide to scale up, you can switch to an rPi, 
 get 3 parallel outputs for a display that is 3 times as large or refreshes 3 times faster, and all your code
 will just work with no changes required outside of the matrix init.  
