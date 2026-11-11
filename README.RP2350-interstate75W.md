@@ -1,6 +1,6 @@
 Interstate 75W is a RP2350 version of Adafruit's ESP-S3 Matrixportal
 ====================================================================
-People are excited about the RP2350 because it's around 0.50c to $1 cheaper than ESP32-S3, but I found it a more difficult chip to work with, namely lack of support or fragile support for things that "just work" on ESP32 and have worked for 5 to 10 years:
+People are excited about the RP2350 (or the older and cheaper RP2040) because it's around 0.50c to $1 cheaper than ESP32-S3, but I found it a more difficult chip to work with, namely lack of support or fragile support for things that "just work" on ESP32 and have worked for 5 to 10 years:
 - lack of support NVRAM ( #include <Preferences.h> )
 - more generally ESP32-S3 comes with PSRAM and better manages its 4MB of flash with optionally 2 OTA partitions, one coredump partition, and one small NVRAM partition (both chips have 4MB of flash, but that RP2350 does not have PSRAM)
 - lack of crash dump on serial port that can be trivially decoded to find what crashed
@@ -128,7 +128,12 @@ USB Stack: Pico USB vs Adafruit TinyUSB
 ---------------------------------------
 If you have issues with arduino not being able to force flashing mode, use my 'F' command in TME69 that calls 'rp2040.rebootToBootloader();' and lets you reflash without holding back buttons. 
 
-But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip. In my case, I 'fixed' it by switching back from the Adafruit USB stack to the Pico SDK stack in the arduino build optins.
+But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip. In my case, I 'fixed' it by switching back from the Adafruit USB stack to the Pico SDK stack in the arduino build optins. My best guess is that the 
+adafruit stack loses messages/interrupts when the RGBPanel ISR is running while the TinyUSB stack does not.
+
+Dual Core Setup: setup1() and loop1()
+-------------------------------------
+On ESP32, it will automatically run wifi callbacks on the other core and probably take care of other ISRs like serial, without you having to worry about it. On RP2350, if you want to offload the first core, you have to manually move variables and code to another core and make sure to carefully sync between the 2 cores with volatile.  It's ultimately the same as what is happening on ESP32, but it's happening there by default whereas here you need to make a second setup1() and loop1() which makes your code less compatible with other CPUs.
 
 Verdict
 -------
