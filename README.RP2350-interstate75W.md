@@ -139,4 +139,4 @@ On ESP32, it will automatically run wifi callbacks on the other core and probabl
 
 Verdict
 -------
-Long story short, it's not pretty, not reliable and it works *so* much better on ESP32.  I wasted close to 2 days figuring all of this out, but this README will hopefully save you most of the time I lost.
+Long story short, things work *so* much better and were *so* much easier on ESP32.  I wasted close to 2 days figuring all of this out, but this README will hopefully save you most of the time I lost.
