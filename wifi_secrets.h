@@ -1,3 +1,4 @@
+// This is for future code that shares WIFI creds
 //#define WIFI_HOSTNAME "ChangeMe"
 #define WIFI_OTA_PWD "OWN_ME"
 #define WIFI_SSID ""
