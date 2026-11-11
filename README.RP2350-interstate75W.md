@@ -1,8 +1,8 @@
-Interstate 75W is an RP2350 version of Adafruit's ESP-S3 Matrixportal
-=====================================================================
+Interstate 75W is a RP2350 version of Adafruit's ESP-S3 Matrixportal
+====================================================================
 People are excited about the RP2350 because it's around 0.50c to $1 cheaper than ESP32-S3, but I found it a more difficult chip to work with, namely lack of support or fragile support for things that "just work" on ESP32 and have worked for 5 to 10 years:
 - lack of support NVRAM ( #include <Preferences.h> )
-- more generally ESP-S3 comes with PSRAM and better manages its 4MB of flash with optionally 2 OTA partitions, one coredump partition, and one small NVRAM partition
+- more generally ESP32-S3 comes with PSRAM and better manages its 4MB of flash with optionally 2 OTA partitions, one coredump partition, and one small NVRAM partition (both chips have 4MB of flash, but that RP2350 does not have PSRAM)
 - lack of crash dump on serial port that can be trivially decoded to find what crashed
 - fragile serial port support (emulated in software and can disappear at runtime for a variety of reasons)
 - Lots ESP32 code like OmEspHelpers does not work since it's another chip
@@ -13,6 +13,9 @@ That last point lost me more of a day of work. Not only is the serial support no
 
 Took me not hours, but several days to port ESP32 code to it like this library (the library was not too hard, but Table_Mark_Estes was due to globals), because code like Table_Mark_Estes69 and Aurora was full of global initialisations (because why not?) and some did a simple floating point division like ratio = width/height, and that's illegal, or rand = random(1,3) and that's illegal too. Gemini AI also told me that initializing a FastLED object that is copied from another one at global scope is apparently not 'safe' either.  
 So what happens if you do this (which in this case was just compiling code that has worked for 10 years on every single chip I ever compiled it on)?  *The chip just crashes before setup() ever runs and you ever see any output of any kind*   Good luck debugging that without a specialized debugging probe or many trial and error builds until one finally runs long enough for setup to print something.
+
+You can get Interstate 75W here: https://shop.pimoroni.com/en-us/products/interstate-75-w . One thing I liked about that board is that the HUB75 connector was layed out so that you can plug the board in most RGBPanels while the Adafruit ESP32S3 MatrixPortal does not directly plug in most panels, or sticks out in an awkward way
+<img width="1151" height="646" alt="image" src="https://github.com/user-attachments/assets/30de31f4-2097-496f-bfb0-2fee4f14037c" />
 
 Arduino Environment build options
 ---------------------------------
