@@ -16,28 +16,29 @@ Installation
 ------------
 You need
 - https://github.com/marcmerlin/Framebuffer_GFX (framebuffer that everything goes to)
-- https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA base hardware driver
+- https://github.com/adafruit/Adafruit_Protomatter base hardware driver
 - https://github.com/adafruit/Adafruit-GFX-Library 2D API
-- https://github.com/FastLED/FastLED another 1D/2D API used by some demos
+- https://github.com/FastLED/FastLED another 1D/2D API used by some demos and used for base RGB888 matrix storage class
 - https://github.com/marcmerlin/LEDMatrix (optional, it's an added 2D API) that runs on top of Framebuffer
 
 How to use?
 -----------
 Please see this code to see how to use the framebuffer driver:
-* This is where you edit or add a new matrix definition: https://github.com/marcmerlin/FastLED_NeoMatrix_SmartMatrix_LEDMatrix_GFX_Demos/blob/d416eb81f084631a9fc5023a7efaac34a9faeba4/neomatrix_config.h#L565
-* Look for ESP32_HUB75_MATRIXPANEL_S3_PORTAL_64BY64 and ESP32_HUB75_MATRIXPANEL elsewhere in the file, although you should not need to modify anything but the first section with pin definition and layout, but if you have multiple kinds of panels, you're better off making new ifdefs for those new options
-* the rest of the hub75matrix init code is in matrix_setup() which you call from your own setup(), and should not need to be modified: https://github.com/marcmerlin/FastLED_NeoMatrix_SmartMatrix_LEDMatrix_GFX_Demos/blob/d416eb81f084631a9fc5023a7efaac34a9faeba4/neomatrix_config.h#L1511
+* This is where you edit or add a new matrix definition: FIXME link
+* Look forRP2350_INTERSTATE75W_64BY64 and RP2XXX_PROTOMATTER elsewhere in the file, although you should not need to modify anything but the first section with pin definition and layout, but if you have multiple kinds of panels, you're better off making new ifdefs for those new options
+* the rest of the init code is in matrix_setup() which you call from your own setup(), and should not need to be modified: FIXME link
 
-If you want something a bit simpler, you can look at https://github.com/marcmerlin/FastLED_ESP32-HUB75-MatrixPanel_FrameBuffer_GFX/blob/main/matrix_config.h  which will get basic demos working but it does not provide the full list of definitions and helper functions available in neomatrix_config.  It gets the work done for basic demos, you can look at BasicTest, which shows you the beauty of those include files, as the demo file is super short
+If you want something a bit simpler, you can look at https://github.com/marcmerlin/FastLED_Protomatter_RGBPanel_FrameBuffer_GFX/blob/main/matrixconfig.h .  It gets the work done for basic demos, you can look at BasicTest, which shows you the beauty of those include files, as the demo file is super short
 
-Why not use mrcodetastic's library gives Adafruit::GFX compatibility?
+Why does this lib exist?
 ---------------------------------------------------------------------
 * Framebuffer_GFX gives you full compatiblity with FastLED, Adafruit::GFX, and LEDMatrix APIs
 
-* As per its name, Framebuffer_GFX is a full framebuffer, so you can read back its content, scroll a frame or portion thereof (whereas, for memory and efficiency reasons, ESP32-HUB75-MatrixPanel is write only, like a TFT)
-
-* Framebuffer_GFX comes with over 10 hardware backends that your code can run un-modified against (including native compile and running on linux). This means your code will run unmodified on plenty of other hardware ( 
-So this layer on top of ESP32-HUB75-MatrixPanel allows you to write your 24bpp framebuffer code, and run it against ESP32-HUB75-MatrixPanel displays, as well as the 10+ other displays supported by https://github.com/marcmerlin/Framebuffer_GFX
+* As per its name, Framebuffer_GFX is a full RBG888 framebuffer, so you can read back its content, scroll a frame or portion thereof. Some of the hardware backends like ProtoMatter are only 16bit RGB565, and some backends are write only (you can't access the framebuffer to shift or mirror data), but this framebuffer allows all of this.
+, and most importantly with the same exact APIs, *so you do not to modify your code for a new backend outside of the setup init section*
+ 
+* Framebuffer_GFX comes with over 10 hardware backends that your code can run un-modified against (including native compile and running on linux). This means your code will run unmodified on plenty of other hardware  
+So this layer on top of Adafruit_Protomatter allows you to write your 24bpp framebuffer code, and run it against RGB Panel displays, as well as the 10+ other displays supported by https://github.com/marcmerlin/Framebuffer_GFX
 
 ![PXL_20260103_174726335](https://github.com/user-attachments/assets/21264cb2-3b2f-42da-a337-91aa91f7552f)
 ![PXL_20260103_175553151](https://github.com/user-attachments/assets/631d94b7-b759-45e5-86ec-2f8ca3c28528)
@@ -46,9 +47,11 @@ What you get is this:
 ```
 Low Level Drv|Glue Driver for FrameBuffer::GFX
 FastLED     - FastLED_NeoMatrix  -------------\     FastLED CRGB Array 
-ESP32-HUB75-MatrixPanel -,                      |
-FastLED_ESP32-HUB75-MatrixPanel_FrameBuffer_GFX
-SmartMatrix - SmartMatrix_GFX -----------------\    24bit FB storage        API Support
+Adafruit_Protomatter vv                        \
+   FastLED_Protomatter_RGBPanel_FrameBuffer_GFX-|
+ESP32-HUB75-MatrixPanel vvv                     |
+FastLED_ESP32-HUB75-MatrixPanel_FrameBuffer_GFX-|
+SmartMatrix - SmartMatrix_GFX ----------------- |    24bit FB storage        API Support
                                                 \   CRGB methods like
 AF:ILI9341-\                                     \  scale8/fadeToBlackBy
 AF:SSD1331  |--- FastLED_ArduinoGFX_TFT ----------|        |               ,FastLED API
