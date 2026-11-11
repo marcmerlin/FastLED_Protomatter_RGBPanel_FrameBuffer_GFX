@@ -1,17 +1,69 @@
-Interstate 75W is an RP2350 version of Adafruit's S3 Matrixportal (which uses an ESP32 S3 chip).
+Interstate 75W is an RP2350 version of Adafruit's ESP-S3 Matrixportal
+=====================================================================
+People are excited about the RP2350 because it's around 0.50c to $1 cheaper than ESP32-S3, but I found it a more difficult chip to work with, namely lack of support or fragile support for things that "just work" on ESP32 and have worked for 5 to 10 years:
+- lack of support NVRAM ( #include <Preferences.h> )
+- more generally ESP-S3 comes with PSRAM and better manages its 4MB of flash with optionally 2 OTA partitions, one coredump partition, and one small NVRAM partition
+- lack of crash dump on serial port that can be trivially decoded to find what crashed
+- fragile serial port support (emulated in software and can disappear at runtime for a variety of reasons)
+- Lots ESP32 code like OmEspHelpers does not work since it's another chip
+- serial emulated in software, is so slow to setup that arduino missed all your early init Serial output unless you put a delay(1000)
+- the biggest issue is it's apparently "illegal" to compute floating point when initializing a global variable, or to initialize a random value to a global and it totally crashes the chip before you'll see any output on serial. I'm not going to discuss C++ bare metal specs, but I'll point out that Teensy got this working fine and so did ESP32, while RP2xxx did not.
 
-People are excited about the RP2350 because it's around 0.50c to $1 cheaper than ESP32-S3, but I found it a much worse chip to work with:
-- lack of support and things that "just work" on ESP32 and have worked for 5 to 10 years
-- lack of NVRAM ( #include <Preferences.h> )
-- lack of crash dump on serial port that can be trivially deocded to find what crashed
-- fragile serial port support (emulated in software and can disappear at runtime)
-- Well established ESP32 code like OmEspHelpers does not work since it's another chip
-- OTA is supposed to be supported, but does not work the same
+That last point lost me more of a day of work. Not only is the serial support not super reliable and non obvious to setup (see below)
+
+Took me not hours, but several days to port ESP32 code to it like this library (the library was not too hard, but Table_Mark_Estes was due to globals), because code like Table_Mark_Estes69 and Aurora was full of global initialisations (because why not?) and some did a simple floating point division like ratio = width/height, and that's illegal, or rand = random(1,3) and that's illegal too. Gemini AI also told me that initializing a FastLED object that is copied from another one at global scope is apparently not 'safe' either.  
+So what happens if you do this (which in this case was just compiling code that has worked for 10 years on every single chip I ever compiled it on)?  *The chip just crashes before setup() ever runs and you ever see any output of any kind*   Good luck debugging that without a specialized debugging probe or many trial and error builds until one finally runs long enough for setup to print something.
+
+Arduino Environment build options
+---------------------------------
+For ESP32-S3 they are not super obvious and matter. For Interstate 75W, even more so as there is no pre-made chip definition in arduino and if you guess wrong, it will crash:
+- Board: generic RP2350
+- Flash Size: 4MB (Sketch: 2MB, FS: 2MB, or 4MB/0 is fine too)
+- PSRAM: none
+- CPU Speed: Start with 128Mhz as 150Mhz is too fast for the unpatched Adafruit Lib
+- Optimize: -Os is fine
+- Stack Protector: enabled
+- Debug Port: Serial
+- Debug Level: All (although that shows plenty of things for ESP32, and it seemed to show none for this chip)
+- USB Stack: Pico SDK (Adafruit TinyUSB worked for output but failed to receive the reboot command necessary for flashing)
+- Upload Method: Default/UF2 if it works (worked for me) or picotool if you make it suid root (see below)
+
+Safe Arduino Serial with RP2xxx
+-------------------------------
+Normally you can have a while (!Serial) loop to wait until the serial port comes up, but RP2350 (and RP2040 I'm sure), it does report true while the serial port hasn't appeared on linux yet, so everything sent to serial during setup is lost. You have to add another blind delay after that to account for it.
+
+```
+// 1. Initialize serial port
+// Note that the serial port is likely starved by Protomatter, so most serial
+// is lost. TODO: move Protomatter to setup1() and loop1()
+Serial.begin(115200);
+
+// 2. Allow up to 4 seconds for Linux host CDC-ACM enumeration
+uint32_t t0 = millis();
+while (!Serial && (millis() - t0 < 4000)) {
+  delay(500);
+  Serial.println("Priming Serial (especially for RP2xxx chips)");
+  Serial.flush();
+}
+
+// this is dirty but needed. On RP2350, Serial returns ok, but the end to 
+// end connection isn't working and the boot messages are lost without this
+delay(1000);
+
+Serial.println("\n\n============================================");
+Serial.println("     HARDWARE BOOT OK: Entering setup()");
+Serial.println("============================================");
+Serial.flush();
+```
 
 Default/UF2 vs picotool
 -----------------------
-flashing:
-- default/UF2 is fragile, it relies on arduino connecting via the fragile serial port connection, telling the chip to reboot as usb-storage and uploading a binary. The arduino env used to be able to send the serial command to switch the chip to usb-storage, but as I write this it is repeatedly failing with:
+Gemini says, default/UF2 is fragile, it relies on:
+- sending a serial command that your code may miss, especially if it's crashed (in that case you must hold boot button, push reset, release boot to force going into usb storage mode)
+- the usb drive being mounted as drive letter
+- copying the firmware on the drive letter, umounting and that causes a flash/reboot
+
+It can also fail like this if the reset command is lost/ignored by the code (this is one of the big pitfall of that chip, other chips use a line like DTR and have hardware put the chip in flashing mode, even if your code is crashed)
 ```
 Resetting /dev/ttyACM0
 Converting to uf2, output size: 546304, start address: 0x2000
@@ -19,10 +71,8 @@ Scanning for RP2040 devices
 No drive to deploy.
 An error occurred while uploading the sketch
 ```
-Even if ttyACM0 happens to have working serial at the time (not a given as I wrote above).
 
-workarounds:  
-1) force the switch to usb-storage:
+So, if you get the above, force the switch to usb-storage:
 ```
 - hold boot button
 - push reset button
@@ -35,7 +85,6 @@ and you get:
 [74736.961948] sd 0:0:0:0: [sda] Attached SCSI removable disk
 ```
 Then flashing will work
-
 
 How about flashing with picotool?
 
@@ -69,15 +118,15 @@ processing.app.SerialException: Error opening serial port '/dev/ttyACM0'. Try co
 	at java.lang.Thread.run(Thread.java:748)
 Error opening serial port '/dev/ttyACM0'. Try consulting the documentation at http://playground.arduino.cc/Linux/All#Permission
 ```
+These are the race conditions in the fragile software serial this chip relies on. 
+
 
 USB Stack: Pico USB vs Adafruit TinyUSB
 ---------------------------------------
-use my 'F' command in TME69 that calls 'rp2040.rebootToBootloader();' and lets you reflash without holding back buttons. 
+If you have issues with arduino not being able to force flashing mode, use my 'F' command in TME69 that calls 'rp2040.rebootToBootloader();' and lets you reflash without holding back buttons. 
 
-But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip. Why, why, why?  If you find a fix, pelase sahre PR.
+But yeah, this is sad, this "just worked" on ESP32-S3 and I've wasted multiple hours with it not working on this RP2350 chip. In my case, I 'fixed' it by switching back from the Adafruit USB stack to the Pico SDK stack in the arduino build optins.
 
-
-I'll note that here is a pretty big issue with rebooting the device and catching early boot messages as the serial port is not visible on linux for a while. You can add huge delays or while (! Serial), but if you do that you're also stopping the device from booting if there is no USB cable connected.
-
-Long story short, it's not pretty, and it works *so* much better on ESP32.  So no, these were hours lost for getting inferior and more fragile functionality.
-
+Verdict
+-------
+Long story short, it's not pretty, not reliable and it works *so* much better on ESP32.  I wasted close to 2 days figuring all of this out, but this README will hopefully save you most of the time I lost.
