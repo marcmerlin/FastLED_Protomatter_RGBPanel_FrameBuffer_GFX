@@ -35,11 +35,7 @@ uint8_t oePin      = 13;
 #include <LEDMatrix.h>
 #endif
 
-// Allocate the 1D CRGB buffer backing FrameBuffer_GFX / FastLED
-CRGB leds[WIDTH * HEIGHT];
-
 Adafruit_Protomatter *pm_matrix = nullptr;
-
 
 /// Please ignore the "TILE" part, for externally managed framebuffers like RGBPanels,
 /// the resolution is coded here.
@@ -180,16 +176,24 @@ void *mallocordie(const char *varname, uint32_t req, bool psram=true) {
 void matrix_setup(bool initserial=true) {
 
     if (initserial) {
-	Serial.begin(115200);
-      #if defined(ARDUINO_ARCH_RP2040)
-        // Wait up to 5 seconds for Linux cdc_acm + serial terminal to open
+      Serial.begin(115200);
+
+      #ifndef ESP32
         uint32_t t0 = millis();
-        while (!Serial && (millis() - t0 < 5000)) {
-            delay(10);
+        while (!Serial && (millis() - t0 < 4000)) {
+          delay(500);
+          Serial.println("Priming Serial (especially for RP2xxx chips)");
+          Serial.flush();
         }
       #endif
-        Serial.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Serial.begin");
-	Serial.flush();
+
+      #ifdef ARDUINO_ARCH_RP2040
+        // this is dirty but needed. On RP2350, Serial returns ok, but the end to 
+        // end connection isn't working and the boot messages are lost without this
+        delay(1000);
+      #endif
+
+      Serial.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Serial.begin");
     }
 
     Serial.println("Matrix FB Init");

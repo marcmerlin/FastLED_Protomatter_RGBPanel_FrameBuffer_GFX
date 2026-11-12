@@ -1,5 +1,3 @@
-// For RP2040/RP2350, read README.RP2350-interstate75W.md
-
 // Enable LEDMATRIX support in neomatrix_config
 #define LEDMATRIX
 
@@ -7,20 +5,19 @@
 // #define WIFI_SSID "foo"
 // #define WIFI_PASSWORD "bar"
 // #define WIFI_HOSTNAME screen1
-#if __has_include("wifi_secrets.h")
+#if __has_include("wifi_secrets.h") && !defined(ARDUINO_ARCH_RP2040)
     #define WIFI
     #include "wifi_secrets.h"
     #define WIFI_AP_CHANNEL 6
     #ifndef WIFI_HOSTNAME 
         #define WIFI_HOSTNAME "TME69-changeme"
     #endif
-    #error "no WIFI"
     #define WIFI_BEACON_ID "TME69"
     #include "wifi_serial_ota.h"
 #endif
 
-//#include "neomatrix_config.h"
-#include "matrixconfig.h"
+#include "neomatrix_config.h"
+//#include "matrixconfig.h"
 #define zeds ledmatrix
 
 #include "Table_Mark_Estes_config.h"
@@ -332,12 +329,14 @@ void setup()
   Serial.begin(115200);
   
   // 2. Allow up to 4 seconds for Linux host CDC-ACM enumeration
+  #ifndef ESP32
   uint32_t t0 = millis();
   while (!Serial && (millis() - t0 < 4000)) {
     delay(500);
     Serial.println("Priming Serial (especially for RP2xxx chips)");
     Serial.flush();
   }
+  #endif
 
   // this is dirty but needed. On RP2350, Serial returns ok, but the end to 
   // end connection isn't working and the boot messages are lost without this
@@ -487,6 +486,7 @@ effects_ptr = new Effects();
     wifi_setup(rebuild_main_page_local, on_ota_start, on_wifi_connect);
   #endif
 
+  matrix->clear();
   display_hostname();
   matrix->show();
 }
@@ -560,10 +560,12 @@ void loop()
 #endif
 
   EVERY_N_SECONDS(30) {
-    // On RP2350, demo 82 at 64x64 updates at 7 to 10 fps (TODO move RGBPanel ISR to 2nd core)
+    // On RP2350  at 125Mhz, demo 82 at 64x64 updates at 7-10 fps (TODO move RGBPanel ISR to 2nd core)
+    // On ESP32-S3 @ 240Mhz, demo 82 at 64x64 updates at 7-10 fps (TODO move main code to core0?)
     Serial.printf("\r\nFramebuffer::GFX fps: %d\r\n", update_freq);
-    // 64x64 on RP2350 at 125Mhz is 224 FPS
-    #ifdef ARDUINO_ARCH_RP2040
+    // 64x64 5BPP on RP2350   @125Mhz is 224 FPS
+    // 64x64 5BPP on ESP32-S3 @240Mhz is 732 FPS!!!
+    #if defined(ARDUINO_ARCH_RP2040) || defined(ESP32)
         Serial.printf(">>>> Panel FPS: %d <<<<\r\n", matrix->backend_fps());
     #endif
   }
