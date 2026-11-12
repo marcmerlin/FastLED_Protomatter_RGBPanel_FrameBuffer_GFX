@@ -1,8 +1,4 @@
-// Build for RP2030 on arduino
-// Because serial works so badly while Protomatter is starving all the resources
-// Flashing with UF2 does not work because arduino apparently can't tell the serial
-// port to switch to USB storage.
-// You need to hold boot, push reset and let boot go to get usb storage
+// For RP2040/RP2350, read README.RP2350-interstate75W.md
 
 // Enable LEDMATRIX support in neomatrix_config
 #define LEDMATRIX
@@ -299,7 +295,7 @@ void display_hostname() {
   matrix->setTextColor(matrix->Color(0,255,0));
   matrix->println(WIFI_HOSTNAME);
 #endif
-#if WIFI
+#ifdef WIFI
   matrix->setTextColor(matrix->Color(0, 0,255));
   matrix->println(get_hostname().c_str());
 #endif
@@ -309,7 +305,7 @@ void display_hostname() {
   pause_until_millis = millis() + 3000;
 }
 
-#if WIFI
+#ifdef WIFI
 void rebuild_main_page_local() {
     WebPages->addSlider(0, 1, "Bestof Demos Only", actionProc, DEMO_BESTOF, HTML_BESTOF);
     WebPages->addSlider(0, 1, "Pause on Demo", actionProc, DEMO_PAUSE, HTML_PAUSE);
@@ -348,7 +344,7 @@ void setup()
   delay(1000);
 
   Serial.println("\n\n============================================");
-  Serial.println("RP2xxx HARDWARE BOOT OK: Entering setup()");
+  Serial.println("     HARDWARE BOOT OK: Entering setup()");
   Serial.println("============================================");
   Serial.flush();
 
@@ -364,6 +360,12 @@ void setup()
   matrix->fillRect(0, 16, 64, 16, matrix->Color(0, 255, 0));   // Green middle
   matrix->fillRect(0, 32, 64, 16, matrix->Color(0, 0, 255));   // Blue bottom
   matrix->show();
+  // Why this? Because, some chips like RP2xxx will fail to get serial working
+  // for a variety of reasons, making it hard to debug
+  // But worse, if any global variables happen to do floating point, or random()
+  // they will simply crash the CPU before setup() gets any chance to even run.
+  // So this is basically a 'hello world' in case serial is busted but the CPU
+  // didn't crash and things fail later.
 
   Serial.println("Test pattern pushed via matrix->show().");
   Serial.flush();
@@ -495,7 +497,7 @@ effects_ptr = new Effects();
 
 void loop()
 {
-  #if WIFI
+  #ifdef WIFI
     wifi_loop();
   #endif
   if (millis() < pause_until_millis) {

@@ -231,7 +231,7 @@ void newpattern()//generates all the randomness for each new pattern
     if (new_pattern) {
       Serial.print("Got new pattern (or IP) via serial ");
       Serial.println(new_pattern);
-      #if WIFI
+      #ifdef WIFI
         // If we received an IP, we're done
         if (parse_new_IP(new_pattern)) return;
       #endif
@@ -295,7 +295,7 @@ Serial.println();
         Serial.printf("Saving Wifi Mode %d to NVRAM\n\r", wifi_master_slave_forceap);
 	set_nvram_master_slave_forceap(wifi_master_slave_forceap);
       } else {
-	#if WIFI
+	#ifdef WIFI
 	  // Serial can come from wifi, so allow it to run
 	  wifi_loop();
         #else
@@ -319,7 +319,7 @@ Serial.println();
         newbrightness = newbrightness * 10 + c - '0';
       } else {
 	// Serial can come from wifi, so allow it to run
-	#if WIFI
+	#ifdef WIFI
 	  // Serial can come from wifi, so allow it to run
 	  wifi_loop();
         #else
@@ -330,7 +330,7 @@ Serial.println();
 
     change_brightness(newbrightness);
   }
-#if NVRAM
+#ifdef NVRAM
   else if (readchar == 'B') {
     Serial.printf("Saving Current Brightness To Flash: %d\r\n", matrix_brightness);
     set_nvram_brightness(matrix_brightness);
