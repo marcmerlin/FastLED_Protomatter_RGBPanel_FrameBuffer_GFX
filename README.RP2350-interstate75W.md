@@ -1,4 +1,4 @@
-Interstate 75W is a RP2350 version of Adafruit's ESP-S3 Matrixportal
+Interstate 75W is a RP2350 version of Adafruit's ESP-S3 Matrixportal and RP2040/RP2350 are not nearly as easy to program as ESP32
 ====================================================================
 People are excited about the RP2350 (or the older and cheaper RP2040) because it's around 0.50c to $1 cheaper than ESP32-S3, but I found it a more difficult chip to work with, namely lack of support or fragile support for things that "just work" on ESP32 and have worked for 5 to 10 years:
 - lack of support NVRAM ( #include <Preferences.h> )
