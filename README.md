@@ -21,6 +21,10 @@ https://youtu.be/iTXz6gqB7NY (click for video)
 
 <img width="1495" height="752" alt="image" src="https://github.com/user-attachments/assets/335f390d-089e-49fe-8035-333eec47367d" />
 
+Warning: RP2040/RP2350 is not as easy to program in Arduino as ESP32 or Teensy
+------------------------------------------------------------------------------
+Read up: [Interstate 75W is a RP2350 version of Adafruit's ESP-S3 Matrixportal and RP2040/RP2350 are not nearly as easy to program as ESP32API](README.RP2350-interstate75W.md)
+
 Installation
 ------------
 You need
