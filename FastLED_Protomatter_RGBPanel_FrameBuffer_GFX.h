@@ -22,6 +22,13 @@
 #ifndef FastLED_Protomatter_RGBPanel_FrameBuffer_GFX_h
 #define FastLED_Protomatter_RGBPanel_FrameBuffer_GFX_h
 
+#ifdef ARDUINO_ARCH_RP2040
+  #if (F_CPU > 128000000)
+    #warning "Please Compile at 128Mhz CPU or less, Protomatter isn't working past that speed"
+  #endif
+#endif
+
+
 #include <Adafruit_Protomatter.h>
 #include <Framebuffer_GFX.h>
 
