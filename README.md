@@ -37,9 +37,9 @@ You need
 How to use?
 -----------
 Please see this code to see how to use the framebuffer driver:
-* This is where you edit or add a new matrix definition: FIXME link
+* This is where you edit or add a new matrix definition: https://github.com/marcmerlin/FastLED_Protomatter_RGBPanel_FrameBuffer_GFX/blame/4472926bdbb9d38f6c8285d43a72c5548803f7b5/neomatrix_config.h#L693
 * Look forRP2350_INTERSTATE75W_64BY64 and RP2XXX_PROTOMATTER elsewhere in the file, although you should not need to modify anything but the first section with pin definition and layout, but if you have multiple kinds of panels, you're better off making new ifdefs for those new options
-* the rest of the init code is in matrix_setup() which you call from your own setup(), and should not need to be modified: FIXME link
+* the rest of the init code is in matrix_setup() which you call from your own setup(), and should not need to be modified: https://github.com/marcmerlin/FastLED_Protomatter_RGBPanel_FrameBuffer_GFX/blame/4472926bdbb9d38f6c8285d43a72c5548803f7b5/neomatrix_config.h#L1717
 
 If you want something a bit simpler, you can look at https://github.com/marcmerlin/FastLED_Protomatter_RGBPanel_FrameBuffer_GFX/blob/main/matrixconfig.h .  It gets the work done for basic demos, you can look at BasicTest, which shows you the beauty of those include files, as the demo file is super short
 
